@@ -64,12 +64,6 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (!isEditingOrbitSpan) {
-      setOrbitSpanInput(String(orbitSpan));
-    }
-  }, [orbitSpan, isEditingOrbitSpan]);
-
-  useEffect(() => {
     if (isEditingOrbitSpan) {
       orbitInputRef.current?.focus();
       orbitInputRef.current?.select();
@@ -323,6 +317,7 @@ export default function Home() {
                     }
                     if (event.key === "Escape") {
                       setIsEditingOrbitSpan(false);
+                      setOrbitSpanInput(String(orbitSpan));
                     }
                   }}
                   className="w-14 rounded-md border border-black/10 bg-white/90 px-2 py-1 text-right font-mono text-[11px] text-[#6f6458]"
@@ -346,9 +341,13 @@ export default function Home() {
               max={360}
               step={5}
               value={orbitSpan}
-              onChange={(event) =>
-                setOrbitSpan(Number.parseInt(event.target.value, 10))
-              }
+              onChange={(event) => {
+                const nextValue = Number.parseInt(event.target.value, 10);
+                setOrbitSpan(nextValue);
+                if (!isEditingOrbitSpan) {
+                  setOrbitSpanInput(String(nextValue));
+                }
+              }}
               className="mt-3 w-full accent-[#e2793a]"
             />
             <div className="mt-3 flex items-center justify-between text-xs uppercase tracking-[0.24em] text-[#8b7c6a]">
