@@ -245,7 +245,7 @@ export default function Home() {
       >
         <div className="space-y-2 px-6 pt-6">
           <p className="text-xs uppercase tracking-[0.32em] text-[#8b7c6a]">
-            Parallax Lab
+            prllx
           </p>
           <h1 className="text-3xl font-semibold leading-tight text-[#1e1b16]">
             Layered PNG viewer
@@ -541,12 +541,6 @@ export default function Home() {
   return (
     <div className="min-h-screen px-6 py-10">
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 lg:flex-row">
-        {!isFullscreen &&
-          renderControlsPanel(
-            "w-full order-2 self-start lg:order-none lg:w-[400px]",
-            "max-h-[calc(100vh-80px)]"
-          )}
-
         <section
           ref={viewerRef}
           className="order-1 relative flex min-h-[60vh] flex-1 flex-col overflow-hidden rounded-[32px] border border-black/10 bg-white/60 shadow-[var(--shadow)] lg:order-none"
@@ -574,17 +568,15 @@ export default function Home() {
                 {showOverlayControls ? "Hide controls" : "Show controls"}
               </button>
             ) : null}
+            {isFullscreen && showOverlayControls
+              ? renderControlsPanel(
+                  "hidden sm:flex w-[400px] max-w-[55vw]",
+                  "max-h-[calc(100vh-140px)]"
+                )
+              : null}
           </div>
           {isFullscreen ? (
             <>
-              <div className="absolute left-6 top-6 z-20 hidden sm:block">
-                {showOverlayControls
-                  ? renderControlsPanel(
-                      "w-[200px] max-w-[55vw]",
-                      "max-h-[calc(100vh-140px)]"
-                    )
-                  : null}
-              </div>
               <div className="absolute inset-x-4 bottom-6 z-20 sm:hidden">
                 {showOverlayControls
                   ? renderControlsPanel(
@@ -613,6 +605,12 @@ export default function Home() {
             </span>
           </div>
         </section>
+
+        {!isFullscreen &&
+          renderControlsPanel(
+            "w-full order-2 self-start lg:order-none lg:w-[400px]",
+            "max-h-[calc(100vh-80px)]"
+          )}
       </main>
     </div>
   );

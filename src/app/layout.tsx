@@ -16,7 +16,7 @@ const spaceMono = Space_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Parallax Layer Viewer",
+  title: "prllx",
   description: "Upload PNG layers and explore them in a 3D parallax scene.",
 };
 
