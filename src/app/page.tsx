@@ -44,6 +44,7 @@ export default function Home() {
   const [environment, setEnvironment] = useState<{
     name: string;
     url: string;
+    type: "hdr" | "ldr";
   } | null>(null);
   const [editingRotation, setEditingRotation] = useState<{
     id: string;
@@ -137,7 +138,8 @@ export default function Home() {
       return;
     }
     const lowerName = file.name.toLowerCase();
-    if (!/\.(hdr|png|jpe?g)$/.test(lowerName)) {
+    const match = lowerName.match(/\.(hdr|png|jpe?g)$/);
+    if (!match) {
       event.target.value = "";
       return;
     }
@@ -147,6 +149,7 @@ export default function Home() {
     const nextEnv = {
       name: file.name,
       url: URL.createObjectURL(file),
+      type: match[1] === "hdr" ? "hdr" : "ldr",
     };
     setEnvironment(nextEnv);
     event.target.value = "";
@@ -622,6 +625,7 @@ export default function Home() {
             orbitSpanDegrees={orbitSpan}
             zoomLocked={zoomLocked}
             environmentUrl={environment?.url ?? null}
+            environmentType={environment?.type ?? null}
           />
           <div className="absolute right-6 top-6 z-20 flex flex-col items-end gap-2">
             <button

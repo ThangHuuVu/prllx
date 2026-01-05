@@ -24,6 +24,7 @@ type ParallaxSceneProps = {
   orbitSpanDegrees: number;
   zoomLocked: boolean;
   environmentUrl: string | null;
+  environmentType?: "hdr" | "ldr" | null;
   className?: string;
 };
 
@@ -71,6 +72,7 @@ export function ParallaxScene({
   orbitSpanDegrees,
   zoomLocked,
   environmentUrl,
+  environmentType = null,
   className,
 }: ParallaxSceneProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -254,7 +256,9 @@ export function ParallaxScene({
       return;
     }
 
-    const isHdr = environmentUrl.toLowerCase().endsWith(".hdr");
+    const isHdr =
+      environmentType === "hdr" ||
+      (environmentType === null && environmentUrl.toLowerCase().endsWith(".hdr"));
     const pmrem = new THREE.PMREMGenerator(renderer);
     pmrem.compileEquirectangularShader();
 
