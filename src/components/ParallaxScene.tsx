@@ -87,6 +87,7 @@ export function ParallaxScene({
   const envMapRef = useRef<THREE.Texture | null>(null);
   const envBackgroundRef = useRef<THREE.Texture | null>(null);
   const envLoadIdRef = useRef(0);
+  const lockedDistanceRef = useRef<number | null>(null);
 
   useEffect(() => {
     layersRef.current = layers;
@@ -204,15 +205,27 @@ export function ParallaxScene({
     if (!controls || !camera) {
       return;
     }
-    controls.enableZoom = !zoomLocked;
-    controls.minDistance = MIN_DISTANCE;
-    controls.maxDistance = zoomLocked ? MIN_DISTANCE : MAX_DISTANCE;
     if (zoomLocked) {
-      const direction = new THREE.Vector3()
-        .subVectors(camera.position, controls.target)
-        .normalize()
-        .multiplyScalar(MIN_DISTANCE);
+      const currentDistance = camera.position.distanceTo(controls.target);
+      const lockedDistance = lockedDistanceRef.current ?? currentDistance;
+      lockedDistanceRef.current = lockedDistance;
+      controls.enableZoom = false;
+      controls.minDistance = lockedDistance;
+      controls.maxDistance = lockedDistance;
+      const direction = new THREE.Vector3().subVectors(
+        camera.position,
+        controls.target
+      );
+      if (direction.lengthSq() === 0) {
+        direction.set(0, 0, 1);
+      }
+      direction.normalize().multiplyScalar(lockedDistance);
       camera.position.copy(controls.target).add(direction);
+    } else {
+      lockedDistanceRef.current = null;
+      controls.enableZoom = true;
+      controls.minDistance = MIN_DISTANCE;
+      controls.maxDistance = MAX_DISTANCE;
     }
     controls.update();
   }, [zoomLocked]);
