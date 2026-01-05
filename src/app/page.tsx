@@ -27,7 +27,7 @@ const sortLayers = (items: LayerItem[]) =>
     return a.order - b.order;
   });
 
-const DEFAULT_LAYER_GAP = 0.32;
+const DEFAULT_LAYER_GAP = 0.02;
 const DEFAULT_LAYER_ROTATION = { x: 0, y: 0, z: 0 };
 const clampOrbitSpan = (value: number) => Math.min(Math.max(value, 10), 360);
 const clampRotation = (value: number) => Math.min(Math.max(value, -180), 180);
@@ -41,6 +41,10 @@ export default function Home() {
   const [zoomLocked, setZoomLocked] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showOverlayControls, setShowOverlayControls] = useState(true);
+  const [environment, setEnvironment] = useState<{
+    name: string;
+    url: string;
+  } | null>(null);
   const [editingRotation, setEditingRotation] = useState<{
     id: string;
     axis: "x" | "y" | "z";
@@ -62,6 +66,14 @@ export default function Home() {
       layersRef.current.forEach((layer) => URL.revokeObjectURL(layer.url));
     };
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (environment) {
+        URL.revokeObjectURL(environment.url);
+      }
+    };
+  }, [environment]);
 
   useEffect(() => {
     if (isEditingOrbitSpan) {
@@ -117,6 +129,34 @@ export default function Home() {
     event.preventDefault();
     setIsDragging(false);
     addFiles(event.dataTransfer.files);
+  };
+
+  const handleEnvironmentChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+    const lowerName = file.name.toLowerCase();
+    if (!/\.(hdr|png|jpe?g)$/.test(lowerName)) {
+      event.target.value = "";
+      return;
+    }
+    if (environment) {
+      URL.revokeObjectURL(environment.url);
+    }
+    const nextEnv = {
+      name: file.name,
+      url: URL.createObjectURL(file),
+    };
+    setEnvironment(nextEnv);
+    event.target.value = "";
+  };
+
+  const clearEnvironment = () => {
+    if (environment) {
+      URL.revokeObjectURL(environment.url);
+    }
+    setEnvironment(null);
   };
 
   const removeLayer = (id: string) => {
@@ -368,6 +408,37 @@ export default function Home() {
           </div>
         </div>
 
+        <div className="px-6">
+          <div className="rounded-2xl border border-black/10 bg-white/70 px-4 py-3">
+            <div className="flex items-center justify-between text-xs uppercase tracking-[0.24em] text-[#8b7c6a]">
+              <span>Environment</span>
+              {environment ? (
+                <button
+                  type="button"
+                  onClick={clearEnvironment}
+                  className="rounded-full border border-[#e7dbcb] px-3 py-1 text-[11px] font-semibold tracking-[0.2em] text-[#5e554a] transition hover:border-[#bfae99]"
+                >
+                  Clear
+                </button>
+              ) : null}
+            </div>
+            <div className="mt-3 flex items-center gap-3 text-xs text-[#6f6458]">
+              <label className="rounded-full border border-black/10 bg-white/80 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#5e554a] transition hover:border-black/20">
+                Upload env
+                <input
+                  type="file"
+                  accept=".hdr,.png,.jpg,.jpeg"
+                  onChange={handleEnvironmentChange}
+                  className="hidden"
+                />
+              </label>
+              <span className="truncate text-[11px] text-[#8b7c6a]">
+                {environment ? environment.name : "No environment loaded"}
+              </span>
+            </div>
+          </div>
+        </div>
+
         <div className="space-y-3 px-6 pb-6">
           <div className="flex items-center justify-between text-xs uppercase tracking-[0.24em] text-[#8b7c6a]">
             <span>Layer stack</span>
@@ -550,6 +621,7 @@ export default function Home() {
             layers={orderedLayers}
             orbitSpanDegrees={orbitSpan}
             zoomLocked={zoomLocked}
+            environmentUrl={environment?.url ?? null}
           />
           <div className="absolute right-6 top-6 z-20 flex flex-col items-end gap-2">
             <button

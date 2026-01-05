@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 
 export type LayerItem = {
   id: string;
@@ -22,13 +23,14 @@ type ParallaxSceneProps = {
   layers: LayerItem[];
   orbitSpanDegrees: number;
   zoomLocked: boolean;
+  environmentUrl: string | null;
   className?: string;
 };
 
 const BASE_LAYER_HEIGHT = 3.4;
 const MIN_DISTANCE = 3.2;
 const MAX_DISTANCE = 11;
-const DEFAULT_LAYER_GAP = 0.32;
+const DEFAULT_LAYER_GAP = 0.02;
 const DEFAULT_LAYER_ROTATION = { x: 0, y: 0, z: 0 };
 
 const clampOrbitSpan = (value: number) => {
@@ -68,6 +70,7 @@ export function ParallaxScene({
   layers,
   orbitSpanDegrees,
   zoomLocked,
+  environmentUrl,
   className,
 }: ParallaxSceneProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -81,6 +84,9 @@ export function ParallaxScene({
   const loadingRef = useRef(new Map<string, Promise<THREE.Texture>>());
   const layersRef = useRef(layers);
   const isMountedRef = useRef(true);
+  const envMapRef = useRef<THREE.Texture | null>(null);
+  const envBackgroundRef = useRef<THREE.Texture | null>(null);
+  const envLoadIdRef = useRef(0);
 
   useEffect(() => {
     layersRef.current = layers;
@@ -170,6 +176,14 @@ export function ParallaxScene({
       });
       meshesRef.current.clear();
       loadingRef.current.clear();
+      if (envMapRef.current) {
+        envMapRef.current.dispose();
+        envMapRef.current = null;
+      }
+      if (envBackgroundRef.current) {
+        envBackgroundRef.current.dispose();
+        envBackgroundRef.current = null;
+      }
       renderer.dispose();
       container.removeChild(renderer.domElement);
     };
@@ -203,6 +217,102 @@ export function ParallaxScene({
     controls.update();
   }, [zoomLocked]);
 
+  useEffect(() => {
+    const scene = sceneRef.current;
+    const renderer = rendererRef.current;
+    if (!scene || !renderer) {
+      return;
+    }
+
+    envLoadIdRef.current += 1;
+    const loadId = envLoadIdRef.current;
+
+    if (!environmentUrl) {
+      scene.background = null;
+      scene.environment = null;
+      if (envMapRef.current) {
+        envMapRef.current.dispose();
+        envMapRef.current = null;
+      }
+      if (envBackgroundRef.current) {
+        envBackgroundRef.current.dispose();
+        envBackgroundRef.current = null;
+      }
+      return;
+    }
+
+    const isHdr = environmentUrl.toLowerCase().endsWith(".hdr");
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    pmrem.compileEquirectangularShader();
+
+    if (isHdr) {
+      const loader = new RGBELoader();
+      loader.load(
+        environmentUrl,
+        (texture) => {
+          if (loadId !== envLoadIdRef.current) {
+            texture.dispose();
+            pmrem.dispose();
+            return;
+          }
+          const envMap = pmrem.fromEquirectangular(texture).texture;
+          texture.dispose();
+          pmrem.dispose();
+
+          if (envMapRef.current) {
+            envMapRef.current.dispose();
+          }
+          if (envBackgroundRef.current) {
+            envBackgroundRef.current.dispose();
+            envBackgroundRef.current = null;
+          }
+          envMapRef.current = envMap;
+          scene.environment = envMap;
+          scene.background = envMap;
+        },
+        undefined,
+        (error) => {
+          pmrem.dispose();
+          console.error("Failed to load HDR environment", error);
+        }
+      );
+      return;
+    }
+
+    const loader = new THREE.TextureLoader();
+    loader.load(
+      environmentUrl,
+      (texture) => {
+        if (loadId !== envLoadIdRef.current) {
+          texture.dispose();
+          pmrem.dispose();
+          return;
+        }
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.mapping = THREE.EquirectangularReflectionMapping;
+
+        const envMap = pmrem.fromEquirectangular(texture).texture;
+        pmrem.dispose();
+
+        if (envMapRef.current) {
+          envMapRef.current.dispose();
+        }
+        if (envBackgroundRef.current) {
+          envBackgroundRef.current.dispose();
+        }
+        envMapRef.current = envMap;
+        envBackgroundRef.current = texture;
+        scene.environment = envMap;
+        scene.background = texture;
+      },
+      undefined,
+      (error) => {
+        pmrem.dispose();
+        console.error("Failed to load environment image", error);
+      }
+    );
+  }, [environmentUrl]);
+
   const applyLayout = (currentLayers: LayerItem[]) => {
     const group = groupRef.current;
     if (!group) {
@@ -213,6 +323,12 @@ export function ParallaxScene({
       (a, b) => a.order - b.order || a.name.localeCompare(b.name)
     );
     const visibleLayers = sortedLayers.filter((layer) => layer.visible);
+
+    let totalDepth = 0;
+    for (let i = 0; i < visibleLayers.length - 1; i += 1) {
+      const gapAfter = visibleLayers[i]?.gapAfter ?? DEFAULT_LAYER_GAP;
+      totalDepth += Math.max(0.02, gapAfter);
+    }
 
     let depthOffset = 0;
     const lastIndex = visibleLayers.length - 1;
@@ -232,7 +348,7 @@ export function ParallaxScene({
         THREE.MathUtils.degToRad(rotation.y),
         THREE.MathUtils.degToRad(rotation.z)
       );
-      mesh.position.z = -depthOffset;
+      mesh.position.z = -(totalDepth - depthOffset);
       mesh.renderOrder = index;
 
       if (index < lastIndex) {
@@ -251,7 +367,7 @@ export function ParallaxScene({
       }
     });
 
-    group.position.z = depthOffset / 2;
+    group.position.z = totalDepth / 2;
   };
 
   useEffect(() => {
