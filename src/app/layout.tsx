@@ -18,6 +18,10 @@ const spaceMono = Space_Mono({
 export const metadata: Metadata = {
   title: "prllx",
   description: "Upload PNG layers and explore them in a 3D parallax scene.",
+  openGraph: {
+    title: "prllx",
+    description: "Upload PNG layers and explore them in a 3D parallax scene.",
+  },
 };
 
 export default function RootLayout({
