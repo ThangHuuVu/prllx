@@ -90,6 +90,8 @@ export function ParallaxScene({
   const envBackgroundRef = useRef<THREE.Texture | null>(null);
   const envLoadIdRef = useRef(0);
   const lockedDistanceRef = useRef<number | null>(null);
+  const initialOrbitSpanRef = useRef(orbitSpanDegrees);
+  const initialZoomLockedRef = useRef(zoomLocked);
 
   useEffect(() => {
     layersRef.current = layers;
@@ -133,10 +135,12 @@ export function ParallaxScene({
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.enablePan = false;
+    const initialOrbitSpan = initialOrbitSpanRef.current;
+    const initialZoomLocked = initialZoomLockedRef.current;
     controls.minDistance = MIN_DISTANCE;
-    controls.maxDistance = zoomLocked ? MIN_DISTANCE : MAX_DISTANCE;
-    controls.enableZoom = !zoomLocked;
-    applyOrbitLimits(controls, orbitSpanDegrees);
+    controls.maxDistance = initialZoomLocked ? MIN_DISTANCE : MAX_DISTANCE;
+    controls.enableZoom = !initialZoomLocked;
+    applyOrbitLimits(controls, initialOrbitSpan);
     camera.position.set(0, 0.05, MIN_DISTANCE);
     controls.update();
 
@@ -168,17 +172,20 @@ export function ParallaxScene({
     };
     animate();
 
+    const meshes = meshesRef.current;
+    const pendingLoads = loadingRef.current;
+
     return () => {
       isMountedRef.current = false;
       resizeObserver.disconnect();
       window.cancelAnimationFrame(frameId);
       controls.dispose();
-      meshesRef.current.forEach((mesh) => {
+      meshes.forEach((mesh) => {
         group.remove(mesh);
         disposeMesh(mesh);
       });
-      meshesRef.current.clear();
-      loadingRef.current.clear();
+      meshes.clear();
+      pendingLoads.clear();
       if (envMapRef.current) {
         envMapRef.current.dispose();
         envMapRef.current = null;
@@ -328,7 +335,7 @@ export function ParallaxScene({
         console.error("Failed to load environment image", error);
       }
     );
-  }, [environmentUrl]);
+  }, [environmentUrl, environmentType]);
 
   const applyLayout = (currentLayers: LayerItem[]) => {
     const group = groupRef.current;
