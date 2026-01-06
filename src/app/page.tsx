@@ -146,10 +146,11 @@ export default function Home() {
     if (environment) {
       URL.revokeObjectURL(environment.url);
     }
+    const envType: "hdr" | "ldr" = match[1] === "hdr" ? "hdr" : "ldr";
     const nextEnv = {
       name: file.name,
       url: URL.createObjectURL(file),
-      type: match[1] === "hdr" ? "hdr" : "ldr",
+      type: envType,
     };
     setEnvironment(nextEnv);
     event.target.value = "";
