@@ -9,6 +9,8 @@ import {
   type DragEvent,
 } from "react";
 import { ParallaxScene, type LayerItem } from "@/components/ParallaxScene";
+import { AuthButton } from "@/components/AuthButton";
+import { ExportDialog } from "@/components/ExportDialog";
 
 const parseLayerOrder = (name: string) => {
   const match = name.match(/\d+/);
@@ -51,6 +53,7 @@ export default function Home() {
     axis: "x" | "y" | "z";
   } | null>(null);
   const [rotationInput, setRotationInput] = useState("");
+  const [showExportDialog, setShowExportDialog] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const layersRef = useRef<LayerItem[]>([]);
   const orbitInputRef = useRef<HTMLInputElement>(null);
@@ -340,6 +343,18 @@ export default function Home() {
           <span className="text-xs text-[#8b7c6a]">
             {layers.length} layer{layers.length === 1 ? "" : "s"}
           </span>
+        </div>
+
+        <div className="flex items-center justify-between gap-3 px-6">
+          <AuthButton />
+          <button
+            type="button"
+            onClick={() => setShowExportDialog(true)}
+            disabled={layers.length === 0}
+            className="rounded-full border border-[#e2793a] px-4 py-1.5 text-xs font-medium text-[#b04a1f] transition hover:bg-[#fff3e7] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Export
+          </button>
         </div>
 
         <div className="px-6">
@@ -689,6 +704,15 @@ export default function Home() {
             "max-h-[calc(100vh-80px)]"
           )}
       </main>
+
+      <ExportDialog
+        open={showExportDialog}
+        onClose={() => setShowExportDialog(false)}
+        layers={orderedLayers}
+        orbitSpan={orbitSpan}
+        zoomLocked={zoomLocked}
+        environment={environment}
+      />
     </div>
   );
 }
