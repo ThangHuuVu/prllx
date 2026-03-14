@@ -1,6 +1,10 @@
 import { createAuthClient } from "better-auth/react";
-import { appUrl } from "@/lib/env";
+
+const clientBaseURL =
+  typeof window !== "undefined"
+    ? window.location.origin
+    : process.env.NEXT_PUBLIC_APP_URL || process.env.BETTER_AUTH_URL || undefined;
 
 export const authClient = createAuthClient({
-  baseURL: appUrl,
+  baseURL: clientBaseURL,
 });
