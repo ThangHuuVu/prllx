@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
-import { getScene, isSceneExpired, incrementViews } from "@/lib/kv";
+import { getScene, isSceneExpired, toViewerScene } from "@/lib/kv";
 import { ShareViewer } from "@/components/ShareViewer";
+
+export const dynamic = "force-dynamic";
 
 export default async function EmbedPage({
   params,
@@ -19,8 +21,5 @@ export default async function EmbedPage({
     notFound();
   }
 
-  // Increment view count
-  await incrementViews(id);
-
-  return <ShareViewer scene={scene} variant="embed" />;
+  return <ShareViewer scene={toViewerScene(scene)} variant="embed" />;
 }
