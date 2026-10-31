@@ -1,10 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { ParallaxScene, type LayerItem } from "@/components/ParallaxScene";
-import type { StoredScene } from "@/lib/kv";
+import type { ViewerScene } from "@/lib/kv";
 
 type ShareViewerProps = {
-  scene: StoredScene;
+  scene: ViewerScene;
   variant: "full" | "embed";
 };
 
@@ -46,12 +47,12 @@ export function ShareViewer({ scene, variant }: ShareViewerProps) {
               prllx - 3D Parallax Viewer
             </p>
           </div>
-          <a
+          <Link
             href="/"
             className="rounded-full border border-black/10 px-4 py-2 text-xs font-medium text-[#5e554a] transition hover:border-black/30 sm:text-sm"
           >
             Create your own
-          </a>
+          </Link>
         </header>
         <div className="relative aspect-[16/10] overflow-hidden rounded-[24px] border border-black/10 bg-white/60 shadow-[var(--shadow)] sm:rounded-[32px]">
           <ParallaxScene
@@ -67,8 +68,7 @@ export function ShareViewer({ scene, variant }: ShareViewerProps) {
             <span>Scroll to zoom</span>
           </div>
         </div>
-        <footer className="mt-4 flex items-center justify-between text-xs text-[#9b8f84]">
-          <span>{scene.viewCount} view{scene.viewCount === 1 ? "" : "s"}</span>
+        <footer className="mt-4 text-xs text-[#9b8f84]">
           <span>{layers.length} layer{layers.length === 1 ? "" : "s"}</span>
         </footer>
       </div>

@@ -16,8 +16,9 @@ export const auth = betterAuth({
     },
   },
   account: {
+    // GitHub is the only provider, so there is no second login to link.
     accountLinking: {
-      enabled: true,
+      enabled: false,
     },
   },
 });

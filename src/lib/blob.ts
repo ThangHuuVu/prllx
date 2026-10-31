@@ -8,7 +8,13 @@ export const assertBlobSize = (size: number) => {
   }
 };
 
+const LAYER_BLOB_PATH =
+  /^scenes\/[A-Za-z0-9-]{8,80}\/(?:layers|env)\/[A-Za-z0-9._-]{1,120}$/;
+
 export const uploadBlob = async (path: string, file: File) => {
+  if (!LAYER_BLOB_PATH.test(path)) {
+    throw new Error("Invalid blob path");
+  }
   assertBlobSize(file.size);
   return put(path, file, {
     access: "public",
